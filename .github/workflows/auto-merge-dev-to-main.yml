@@ -12,9 +12,9 @@ on:
 jobs:
   # Job to enable Auto-Merge for the PR
   auto-merge:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     # Only run for open PRs from dev to main
-    if: github.head_ref == 'dev' && github.base_ref == 'main'
+    if: ${{ (github.head_ref == 'dev' && github.base_ref == 'main') && ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
 
     permissions:
       contents: write
@@ -45,7 +45,7 @@ jobs:
           # Ensure local branches are up-to-date
           git fetch origin main
           git fetch origin dev
-          
+
           # Use merge-base to find the common ancestor and check for conflicts
           if git merge-tree $(git merge-base origin/main origin/dev) origin/main origin/dev | grep -q '<<<<<<<'; then
             echo "has_conflicts=true" >> $GITHUB_OUTPUT
@@ -83,7 +83,7 @@ jobs:
             --auto \
             --merge \
             --delete-branch=false
-          
+
           # Add success comment
           gh pr comment ${{ steps.get-pr.outputs.pr_number }} \
             --body "✅ **Auto-merge Enabled**
@@ -98,12 +98,12 @@ jobs:
           echo "### 🤖 Auto-merge Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- 📝 Processing PR #${{ steps.get-pr.outputs.pr_number }} (dev → main)" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.check-conflicts.outputs.has_conflicts }}" == "true" ]; then
             echo "- ❌ Merge conflicts detected, manual resolution required" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ✅ No merge conflicts, auto-merge enabled" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**PR Link**: https://github.com/${{ github.repository }}/pull/${{ steps.get-pr.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY

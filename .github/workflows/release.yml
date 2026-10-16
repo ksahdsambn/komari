@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-and-attach-binaries:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
 
     strategy:
       matrix:
@@ -83,11 +83,12 @@ jobs:
 
       - name: Install Zig cross-compiler toolchain
         run: |
-          sudo apt-get update # Update apt package lists
-          sudo apt-get install -y build-essential curl
+          true # Update apt package lists
+          dpkg-query -W -- build-essential curl
           wget https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz
-          sudo tar -C /usr/local -Jxf zig-x86_64-linux-0.14.1.tar.xz
-          echo "PATH=$PATH:/usr/local/zig-x86_64-linux-0.14.1" >> $GITHUB_ENV
+          mkdir -p "$RUNNER_TEMP/zig"
+          tar -C "$RUNNER_TEMP/zig" -Jxf zig-x86_64-linux-0.14.1.tar.xz
+          echo "PATH=$PATH:$RUNNER_TEMP/zig/zig-x86_64-linux-0.14.1" >> $GITHUB_ENV
 
       - name: Build binary
         env:
@@ -117,3 +118,4 @@ jobs:
           # Upload the binary as a release asset using GitHub CLI
           gh release upload ${{ github.event.release.tag_name }} $BINARY_NAME --repo ${{ github.repository }}
         shell: bash
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}

@@ -8,17 +8,16 @@ on:
 
 jobs:
   build-binaries:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4      
-      
+        uses: actions/checkout@v4
+
       #- name: Create dummy index.html
       #  run: |
       #    mkdir -p public/dist
       #    echo "<html><body><h1>This is komari development server.</h1></body></html>" > public/dist/index.html
-      
       - name: Clone and build frontend
         run: |
           git clone https://github.com/komari-monitor/komari-web web
@@ -48,12 +47,13 @@ jobs:
           name: komari
           path: komari
 
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
   deploy-to-production:
     needs: build-binaries
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     env:
       PRODUCTION_SERVER: ${{ vars.PRODUCTION_SERVER }}
-    if: github.ref == 'refs/heads/dev'
+    if: ${{ (github.ref == 'refs/heads/dev') && ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
 
     steps:
       - name: Download binary

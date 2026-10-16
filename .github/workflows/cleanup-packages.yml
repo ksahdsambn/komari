@@ -8,7 +8,7 @@ on:
 
 jobs:
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, dartnode-linux, dartnode-build]
     permissions:
       packages: write
       contents: read
@@ -59,3 +59,4 @@ jobs:
               });
               console.log(`Deleted package version ${version.id} with tags: ${version.metadata.container.tags.join(', ') || 'none'}`);
             }
+    if: ${{ ((github.event_name != 'pull_request' && github.event_name != 'pull_request_target') || github.event.pull_request.head.repo.full_name == github.repository) }}
